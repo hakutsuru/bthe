@@ -153,6 +153,15 @@ I am also skeptical of over-simplified methods. I found the example refactoring 
 
 Like most developers, I am averse to deeply nested logic and long methods, but keeping related lines of code in one place can make it more cohesive.
 
+### Feedback
+
+#### Response to "initial commit" (quick-draft)
+
+    Your source code appears very complex to me. The long methods makes it hard for you to implement it in an easier way. A good approach is usually to break down the complex problem in very small and easily solvable pieces. That's something I'm missing in your source. 
+
+I doubt it possible to solve this puzzle in a brute force way *that would be significantly more simple*. Fedback was provided by the CTO who supplied the challenge. If you can scale a database to 10,000 operations/second, and could make this puzzle seem trivial, *and* want to join a startup in New York City -- let me put you in touch...
+
+
 ### License
 
 [placeholder]
