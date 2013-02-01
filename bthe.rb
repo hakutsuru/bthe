@@ -48,6 +48,7 @@ module Reporting
     end
     puts "  Branch mode: #{BRANCH_MODE}"
     puts "  Narration: #{NARRATION}"
+    puts "  Minimum moves to solve: #{2**NUMBER_OF_DISKS - 1}"
     puts "\n"
   end
 
@@ -63,6 +64,7 @@ module Reporting
 
   def self.publish(move_history)
     puts "Solution ##{$solutions_found}"
+    puts "Steps Required #{move_history.length - 1}"
     move_history.each { |move| puts "  #{move}" }
     puts "\n"
   end
@@ -86,7 +88,6 @@ end
 
 class Puzzle
   include Towering
-  include Reporting
 
   def self.solve
     Reporting.announce
@@ -114,7 +115,6 @@ end
 
 class Node
   include Towering
-  include Reporting
   attr_reader :disk, :state, :history
   Child = Struct.new(:disk_moved, :new_state, :node)
   # child - potential new node in solution tree
@@ -246,6 +246,7 @@ end
 
 if $0 == __FILE__
   NUMBER_OF_DISKS = 3
+  OPTIMAL_MOVES_NUMBER = 2^NUMBER_OF_DISKS - 1
   BRANCH_MODE = "standard" # [standard, reverse]
   SEEK_MODE = "lazy" # [lazy, exhaustive]
   NARRATION = "none" # [none, verbose]
