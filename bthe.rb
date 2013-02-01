@@ -1,4 +1,6 @@
-require 'pp'
+require 'pp' #remove later
+require 'rubygems'
+require 'json'
 
 module Towering
   EMPTY_CHARACTER = "x"
@@ -39,60 +41,77 @@ end
 
 module Reporting
   def self.announce
-    puts "bthe - Brutish Tower of Hanoi Exercise"
-    puts "Brute force solving Towers of Hanoi"
-    puts "  Number of disks: #{NUMBER_OF_DISKS}"
-    puts "  Seek mode: #{SEEK_MODE}"
-    if SEEK_MODE == "lazy"
-      puts "  -- halts when any solution found"
+    if RESPONSE == "human"
+      puts "bthe - Brutish Tower of Hanoi Exercise"
+      puts "Brute force solving Towers of Hanoi"
+      puts "  Number of disks: #{NUMBER_OF_DISKS}"
+      puts "  Seek mode: #{SEEK_MODE}"
+      if SEEK_MODE == "lazy"
+        puts "  -- halts when any solution found"
+      end
+      puts "  Branch mode: #{BRANCH_MODE}"
+      puts "  Narration: #{NARRATION}"
+      puts "\n"
     end
-    puts "  Branch mode: #{BRANCH_MODE}"
-    puts "  Narration: #{NARRATION}"
-    puts "  Minimum moves to solve: #{2**NUMBER_OF_DISKS - 1}"
-    puts "\n"
   end
 
   def self.update(state, possible_moves)
-    if NARRATION == "verbose"
+    if NARRATION == "verbose" && RESPONSE == "human"
       puts "node: #{$nodes_created}"
       puts "state: #{state}"
       puts "brood:"
-      pp possible_moves
+      if possible_moves.empty?
+        puts "  [none]"
+      else
+        possible_moves.each { |move| puts "  #{move}" }
+      end
       puts "\n"
     end
   end
 
   def self.publish(move_history)
-    puts "Solution ##{$solutions_found}"
-    puts "Steps Required #{move_history.length - 1}"
-    move_history.each { |move| puts "  #{move}" }
-    puts "\n"
-  end
-
-  def self.stack_warning
-    if $nodes_created == 1000 && $solutions_found == 0
-      puts "Warning: 1000 nodes created without solution found..."
-      puts "consider altering branch traversal mode."
-      puts "[stack limit will be exceeded, depending on context"
-      puts "this may seem like an infinite loop.]"
+    if RESPONSE == "human"
+      puts "Solution ##{$solutions.size}"
+      move_history.each { |move| puts "  #{move}" }
       puts "\n"
     end
   end
 
+  def self.stack_warning
+    if RESPONSE == "human"
+      if $nodes_created == 1000 && $solutions.size == 0
+        puts "Warning: 1000 nodes created without solution found..."
+        puts "consider altering branch traversal mode."
+        puts "[stack limit will be exceeded, depending on context"
+        puts "this may seem like an infinite loop.]"
+        puts "\n"
+      end
+    end
+  end
+
   def self.retire
-    puts "Puzzle solved!"
-    puts "Moves Evaluated: #{$nodes_created-1}"
-    puts "[finis]"
+    if RESPONSE == "json"
+      response = { "number_of_disks" => NUMBER_OF_DISKS,
+                  "branch_mode"      => BRANCH_MODE,
+                  "seek_mode"        => SEEK_MODE,
+                  "solutions"        => $solutions }
+      puts response.to_json
+    else
+      puts "Puzzle solved!"
+      puts "Moves Evaluated: #{$nodes_created-1}"
+      puts "[finis]"
+    end
   end
 end
 
 class Puzzle
   include Towering
+  include Reporting
 
   def self.solve
     Reporting.announce
     $nodes_created = 0
-    $solutions_found = 0
+    $solutions = []
     full_tower = (1..NUMBER_OF_DISKS).to_a
     towers = Towers.new
     # initial puzzle state
@@ -115,6 +134,7 @@ end
 
 class Node
   include Towering
+  include Reporting
   attr_reader :disk, :state, :history
   Child = Struct.new(:disk_moved, :new_state, :node)
   # child - potential new node in solution tree
@@ -157,7 +177,7 @@ class Node
   end
 
   def publish_solution
-    $solutions_found += 1
+    $solutions << @history
     Reporting.publish(@history)
     if SEEK_MODE == "lazy"
       Reporting.retire
@@ -245,11 +265,11 @@ class Node
 end
 
 if $0 == __FILE__
-  NUMBER_OF_DISKS = 3
-  OPTIMAL_MOVES_NUMBER = 2^NUMBER_OF_DISKS - 1
+  NUMBER_OF_DISKS = 4
   BRANCH_MODE = "standard" # [standard, reverse]
   SEEK_MODE = "lazy" # [lazy, exhaustive]
   NARRATION = "none" # [none, verbose]
+  RESPONSE = "human" # [human, json]
 
   Puzzle.solve
   Reporting.retire
