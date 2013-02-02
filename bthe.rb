@@ -51,6 +51,7 @@ module Reporting
       end
       puts "  Branch mode: #{BRANCH_MODE}"
       puts "  Narration: #{NARRATION}"
+      puts "  Minimum moves to solve: #{2**NUMBER_OF_DISKS - 1}"
       puts "\n"
     end
   end
@@ -72,20 +73,9 @@ module Reporting
   def self.publish(move_history)
     if RESPONSE == "human"
       puts "Solution ##{$solutions.size}"
+      puts "Steps Required #{move_history.length - 1}"
       move_history.each { |move| puts "  #{move}" }
       puts "\n"
-    end
-  end
-
-  def self.stack_warning
-    if RESPONSE == "human"
-      if $nodes_created == 1000 && $solutions.size == 0
-        puts "Warning: 1000 nodes created without solution found..."
-        puts "consider altering branch traversal mode."
-        puts "[stack limit will be exceeded, depending on context"
-        puts "this may seem like an infinite loop.]"
-        puts "\n"
-      end
     end
   end
 
@@ -98,7 +88,7 @@ module Reporting
       puts response.to_json
     else
       puts "Puzzle solved!"
-      puts "Moves Evaluated: #{$nodes_created-1}"
+      puts "States Evaluated: #{$nodes_created}"
       puts "[finis]"
     end
   end
@@ -106,7 +96,6 @@ end
 
 class Puzzle
   include Towering
-  include Reporting
 
   def self.solve
     Reporting.announce
@@ -134,7 +123,6 @@ end
 
 class Node
   include Towering
-  include Reporting
   attr_reader :disk, :state, :history
   Child = Struct.new(:disk_moved, :new_state, :node)
   # child - potential new node in solution tree
@@ -157,7 +145,6 @@ class Node
       @brood = []
     end
     Reporting.update(state, @brood)
-    Reporting.stack_warning
   end
 
   def play
@@ -166,13 +153,16 @@ class Node
     case
     when puzzle_solved
       publish_solution
-      @parent.prune
     when no_valid_moves
-      @parent.prune
+      return
     else
-      move = pick_branch
-      move.node = Node.new(move.disk_moved, move.new_state, self)
-      move.node.play
+      until no_valid_moves do
+        move = pick_branch
+        move.node = Node.new(move.disk_moved, move.new_state, self)
+        move.node.play
+        prune_evaluated_branch
+        no_valid_moves = (@brood == [])
+      end
     end
   end
 
@@ -197,21 +187,8 @@ class Node
     move
   end
 
-  def prune
-    # remove evaluated branch
+  def prune_evaluated_branch
     @brood.reject! { |move| move.node != nil }
-    # choose another branch
-    move = pick_branch
-    if move.nil?
-      if @parent.nil?
-        return
-      else
-        @parent.prune
-      end
-    else
-      move.node = Node.new(move.disk_moved, move.new_state, self)
-      move.node.play
-    end
   end
 
   def analyze_options(previous_disk, state, history)

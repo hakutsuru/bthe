@@ -17,38 +17,49 @@ Unfortunately, I failed to learn the lessons of [warpt](https://github.com/hakut
 
 ### Example Code Run
       ~ $ ruby [...]/bthe/bthe.rb
-     Solution #1
-     1234-xxxx-xxxx
-     x234-xxx1-xxxx
-     xx34-xxx1-xxx2
-     x134-xxxx-xxx2
-     x134-xxx2-xxxx
-     xx34-xx12-xxxx
-     xxx4-xx12-xxx3
-     xx14-xxx2-xxx3
-     xx14-xxxx-xx23
-     xxx4-xxx1-xx23
-     xx24-xxx1-xxx3
-     x124-xxxx-xxx3
-     x124-xxx3-xxxx
-     xx24-xx13-xxxx
-     xxx4-xx13-xxx2
-     xx14-xxx3-xxx2
-     xx14-xx23-xxxx
-     xxx4-x123-xxxx
-     xxxx-x123-xxx4
-     xxx1-xx23-xxx4
-     xxx1-xxx3-xx24
-     xxxx-xx13-xx24
-     xxx2-xx13-xxx4
-     xx12-xxx3-xxx4
-     xx12-xxxx-xx34
-     xxx2-xxx1-xx34
-     xxxx-xxx1-x234
-     xxxx-xxxx-1234
+      bthe - Brutish Tower of Hanoi Exercise
+      Brute force solving Towers of Hanoi
+        Number of disks: 4
+        Seek mode: lazy
+        -- halts when any solution found
+        Branch mode: standard
+        Narration: none
+        Minimum moves to solve: 15
 
-     Puzzle solved!
-     [finis]
+      Solution #1
+      Steps Required 27
+        1234-xxxx-xxxx
+        x234-xxx1-xxxx
+        xx34-xxx1-xxx2
+        x134-xxxx-xxx2
+        x134-xxx2-xxxx
+        xx34-xx12-xxxx
+        xxx4-xx12-xxx3
+        xx14-xxx2-xxx3
+        xx14-xxxx-xx23
+        xxx4-xxx1-xx23
+        xx24-xxx1-xxx3
+        x124-xxxx-xxx3
+        x124-xxx3-xxxx
+        xx24-xx13-xxxx
+        xxx4-xx13-xxx2
+        xx14-xxx3-xxx2
+        xx14-xx23-xxxx
+        xxx4-x123-xxxx
+        xxxx-x123-xxx4
+        xxx1-xx23-xxx4
+        xxx1-xxx3-xx24
+        xxxx-xx13-xx24
+        xxx2-xx13-xxx4
+        xx12-xxx3-xxx4
+        xx12-xxxx-xx34
+        xxx2-xxx1-xx34
+        xxxx-xxx1-x234
+        xxxx-xxxx-1234
+
+      Puzzle solved!
+      States Evaluated: 28
+      [finis]
 
 ### Installation
 
@@ -66,7 +77,7 @@ Given three rods and a number of disks, move the tower of disks from the first r
 
 Without researching the mathematics, visualization leads one to realize there will never be more than two possible moves from any game state. Thus, the problem space is a binary tree, though I chose to treat it as general tree (with an unrestricted number of potential moves from any given state).
 
-When evaluating potental moves, I implemented additional rules...
+When evaluating potential moves, I implemented additional rules...
 
     • No disk may be moved twice in a row.
     • No game state may be repeated during the game.
@@ -89,7 +100,7 @@ Aside from completing the challenge, it would be nice to achieve ancillary goals
 
 [2] There are differing interpretations of efficiency, being a brute force solution, we cannot expect to achieve much in terms of performance. Managing memory and garbage collection can make programs run faster, but exploring a tree is *recursive*.
 
-(Eliminating branches once they have been evaluated would be a sensible tactic to allow the program to handle larger numbers of disks, or at least minimize wasted memory, *except* that many objects must be stored in stack memory, which is severely limited...)
+(Eliminating branches once evaluated is a sensible tactic to allow the program to handle larger numbers of disks, or at least minimize wasted memory, *except* that many objects must be stored in stack memory, which is severely limited...)
 
 [3] Default operation should satisfy the task requirements. But anyone who would run such a program would want to explore all possible solutions. Also, it is natural to want to experiment with different numbers of disks. Another simple option would be to change the order branch walking, which should alter the order of solutions found.
 
@@ -107,9 +118,9 @@ I considered two solutions, a tree walk and iterating through permutations. I en
 
 Walking a tree is recursive by nature, but easy to reason about... I thought following each branch out to a leaf, then backtracking to the next branch *while discarding leaves* could minimize resource consumption.
 
-(One fun idea was the possibility of spawning threads to follow new branches, with the caveat that this would introduce thread pool management -- as there are far too many branches to be managed in parallel as the number of disk grows.)
+(One interesting idea is spawning threads to follow new branches, with the caveat that this would introduce thread pool management -- as there are far too many branches to be managed in parallel as the number of disk grows.)
 
-Minimizing the data for each node may seem like an vital optimization, but actually, there is a critical problem with any recursive solution... limitations on stack memory [see *Issues*]. I doubly linked the tree to ease navigation, and stored history in nodes to avoid walking the entire tree. Even if node instance data could be minimized, permutations grow exponentially with the number of disks, so stack limitations would be exceeded.
+Minimizing the data for each node may seem like an vital optimization, but actually, there is a critical problem with any recursive solution... limitations on stack memory [see *Issues*]. I doubly linked the tree to ease navigation, and stored history in nodes to avoid redundantly walking the tree. Even if node instance data could be minimized, permutations grow exponentially with the number of disks, so stack limitations would be exceeded.
 
 The tree solution was instructive and fun. A significant benefit of this solution is that it makes me much more confident about trying an iterative approach (which should yield complete results for more complex puzzles and allow interesting experiments with garbage collection).
 
@@ -117,7 +128,20 @@ Running this solution in exhaustive mode for three disks reveals 12 solutions. I
 
 ### Issues
 
-When running the program in *exhaustive* (seek) mode for some number of disks greater than three, you should encounter "stack level too deep (SystemStackError)".
+
+**Correction**
+
+The original algorithm was naive. I created a game node, then called *play* on the node. On reaching a leaf, I would *prune* the node parent. In *prune*, I would then check for other branches and follow those (via *play*). Thus, the recursion was loopy, and exhausted stack memory (when seeking all solutions and playing with more than three disks).
+
+Logically, stack calls should be nearly equivalent to the number of moves in the history of any puzzle state (or node). When dealing with recursion, it makes sense to only call the recursive function from *itself*, to make it easier to evaluate.
+
+Attempting to trap SystemStackError is futile (Ruby 1.9.3p194). The best one can do is keep track of *caller* depth, and warn when it is growing beyond a certain threshold.
+
+The current algorithm reveals 1872 solutions for a puzzle with *four* disks, yet fails to find any solutions for *eight* disks due to stack memory limitations.
+
+**Original Observations**
+
+When running the program for some number of disks greater than three [depending on seek mode], you should encounter "stack level too deep (SystemStackError)".
 
 I attempted to work around this by adjusting stack size, but it seemed ineffective.
 
@@ -162,7 +186,7 @@ Like most developers, I am averse to deeply nested logic and long methods, but k
     the complex problem in very small and easily solvable pieces.
     That's something I'm missing in your source. 
 
-I doubt it possible to solve this puzzle in a brute force way *that would be significantly more simple*. Fedback was provided by the CTO who supplied the challenge. If you can scale a database to 10,000 operations/second, and could make this puzzle seem trivial, *and* want to join a startup in New York City -- let me put you in touch...
+I doubt it possible to solve this puzzle in a brute force way *that would be significantly more simple*. Feedback was provided by the CTO who supplied the challenge. If you can scale a database to 10,000 operations/second, and could make this puzzle seem trivial, *and* want to join a startup in New York City -- let me put you in touch...
 
 
 ### License
