@@ -19,6 +19,7 @@ Unfortunately, I failed to learn the lessons of [warpt](https://github.com/hakut
       ~ $ ruby [...]/bthe/bthe.rb
       bthe - Brutish Tower of Hanoi Exercise
       Brute force solving Towers of Hanoi
+      [Use Control-C to halt program]
         Number of disks: 4
         Seek mode: lazy
         -- halts when any solution found
@@ -106,7 +107,7 @@ Aside from completing the challenge, it would be nice to achieve ancillary goals
 
 [4] Ruby is a testing-obsessed community. Testing should help illuminate a program, and ensure it is inexpensive to maintain. I found [*Practical Object-Oriented Design in Ruby*](http://www.poodr.info) to be instructive, and wish to emulate its author's approach.
 
-[5] I have been asked if I ever created a gem, *sigh*. Another book is relevant to creating tools such as this -- [*Build Awesome Command-Line Applications in Ruby*](http://pragprog.com/book/dccar/build-awesome-command-line-applications-in-ruby).
+[5] I have been asked if I ever created a gem, *sigh*. Another book is relevant to creating tools such as this -- [*Build Awesome Command-Line Applications in Ruby*](http://pragprog.com/book/dccar/build-awesome-command-line-applications-in-ruby). Let's avoid incorporating other gems, too.
 
 [6] At Boston University, I was taught to focus on the requirements, and only after those were fully met, to add polish. After many interviews, I am intrigued by the extravagant desires of organizations seeking developers. Ruby can be a perilously zealous community, yet like most such cultures, also hypocritical.
 

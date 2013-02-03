@@ -44,6 +44,7 @@ module Reporting
     if RESPONSE == "human"
       puts "bthe - Brutish Tower of Hanoi Exercise"
       puts "Brute force solving Towers of Hanoi"
+      puts "[Use Control-C to halt program]"
       puts "  Number of disks: #{NUMBER_OF_DISKS}"
       puts "  Seek mode: #{SEEK_MODE}"
       if SEEK_MODE == "lazy"
@@ -72,6 +73,7 @@ module Reporting
 
   def self.publish(move_history)
     if RESPONSE == "human"
+      print "\b\b" # clean up cursor
       puts "Solution ##{$solutions.size}"
       puts "Steps Required #{move_history.length - 1}"
       move_history.each { |move| puts "  #{move}" }
@@ -87,6 +89,7 @@ module Reporting
                   "solutions"        => $solutions }
       puts response.to_json
     else
+      print "\b\b" # clean up cursor
       puts "Puzzle solved!"
       puts "States Evaluated: #{$nodes_created}"
       puts "[finis]"
@@ -247,6 +250,13 @@ if $0 == __FILE__
   SEEK_MODE = "lazy" # [lazy, exhaustive]
   NARRATION = "none" # [none, verbose]
   RESPONSE = "human" # [human, json]
+  
+  trap("SIGINT") do
+    # capture Ctl-C
+    print "\b\b"
+    puts "bthe - user quit"
+    exit
+  end
 
   Puzzle.solve
   Reporting.retire
